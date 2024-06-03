@@ -10,7 +10,7 @@ import {
   ErrorMsg,
   FormContainer,
   LoginButton,
-} from '../Home/StyledComponents'
+} from './styledComponents'
 
 class Login extends Component {
   state = {

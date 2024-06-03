@@ -1,115 +1,78 @@
-import {Component} from 'react'
-import Cookies from 'js-cookie'
-import Loader from 'react-loader-spinner'
+import {Link} from 'react-router-dom'
 
-import AllVideos from '../AllVideos'
+import {
+  NoVideoView,
+  NoVideoImg,
+  NoVideoheading,
+  NoVideoNote,
+  RetryButton,
+  VideoCardList,
+  ListItem,
+  ThumbnailImg,
+  VideoDetailsCont,
+  ProfileImg,
+  ContentContainer,
+  Title,
+  ChannelName,
+  ViewsAndDate,
+  Dot,
+} from './styledComponents'
+import VideoAndThemeContext from '../../context/VideoAndThemeContext'
 
-import {FailureImg, RetryButton, Ulist} from '../Home/StyledComponents'
+const HomeVideos = props => {
+  const {homevideos, onRetry} = props
+  const videosCount = homevideos.length
 
-const apiStatusConstants = {
-  initial: 'INITIAL',
-  success: 'SUCCESS',
-  failure: 'FAILURE',
-  inProgress: 'IN_PROGRESS',
-}
-
-class HomeVideos extends Component {
-  state = {allVideos: [], apiStatus: apiStatusConstants.initial}
-
-  componentDidMount() {
-    this.getVideos()
+  const onClickRetry = () => {
+    onRetry()
   }
-
-  getVideos = async () => {
-    this.setState({
-      apiStatus: apiStatusConstants.inProgress,
-    })
-
-    const jwtToken = Cookies.get('jwt_token')
-
-    const apiUrl = 'https://apis.ccbp.in/videos/all?search='
-    const options = {
-      headers: {
-        Authorization: `Bearer ${jwtToken}`,
-      },
-      method: 'GET',
-    }
-    const response = await fetch(apiUrl, options)
-    if (response.ok === true) {
-      const fetchedData = await response.json()
-      const updatedData = {
-        videos: fetchedData.videos.map(each => ({
-          id: each.id,
-          title: each.title,
-          thumbnailUrl: each.thumbnail_url,
-          viewCount: each.view_count,
-          publishedAt: each.published_at,
-          name: each.channel.name,
-          profileImageUrl: each.channel.profile_image_url,
-        })),
-      }
-      this.setState({
-        allVideos: updatedData,
-        apiStatus: apiStatusConstants.success,
-      })
-    }
-    if (response.status === 401) {
-      this.setState({
-        apiStatus: apiStatusConstants.failure,
-      })
-    }
-  }
-
-  renderVideosList = () => {
-    const {allVideos} = this.state
-    console.log(allVideos)
-    return (
-      <div>
-        <Ulist>
-          {allVideos.videos.map(each => (
-            <AllVideos details={each} key={each.id} />
-          ))}
-        </Ulist>
-      </div>
-    )
-  }
-
-  renderFailureView = () => {
-    return (
-      <>
-        <FailureImg
-          src="https://assets.ccbp.in/frontend/react-js/nxt-watch-failure-view-light-theme-img.png"
-          alt="failure view"
-        />
-        <p>Oops! Something Went Wrong</p>
-        <p>
-          We are having some trouble to complete your request.
-          <br />
-          Please try again.
-        </p>
-        <RetryButton>Retry</RetryButton>
-      </>
-    )
-  }
-
-  renderLoadingView = () => (
-    <div className="loader-container" data-testid="loader">
-      <Loader type="ThreeDots" color="#ffffff" height="50" width="50" />
-    </div>
+  return (
+    <VideoAndThemeContext.Consumer>
+      {value => {
+        const {isDarkTheme} = value
+        const headingColor = isDarkTheme ? '#f1f5f9' : '1e293b'
+        const noteColor = isDarkTheme ? '#e2e8f0' : '#475569'
+        const textColor = isDarkTheme ? '#f9f9f9' : '#231f20'
+        return videosCount > 0 ? (
+          <VideoCardList>
+            {homevideos.map(each => (
+              <Link to={`/videos/${each.id}`} key={each.id}>
+                <ListItem>
+                  <ThumbnailImg src={each.thumbnailUrl} alt="video thumbnail" />
+                  <VideoDetailsCont>
+                    <ProfileImg src={each.profileImageUrl} alt="channel logo" />
+                    <ContentContainer>
+                      <Title color={textColor}>{each.title}</Title>
+                      <ChannelName color={textColor}>{each.name}</ChannelName>
+                      <ViewsAndDate color={textColor}>
+                        {each.viewCount} views <Dot>&#8226;</Dot>{' '}
+                        {each.publishedAt}
+                      </ViewsAndDate>
+                    </ContentContainer>
+                  </VideoDetailsCont>
+                </ListItem>
+              </Link>
+            ))}
+          </VideoCardList>
+        ) : (
+          <NoVideoView>
+            <NoVideoImg
+              src="https://assets.ccbp.in/frontend/react-js/nxt-watch-no-search-results-img.png"
+              alt=" no videos"
+            />
+            <NoVideoheading headingColor={headingColor}>
+              No Search Reasult Found
+            </NoVideoheading>
+            <NoVideoNote noteColor={noteColor}>
+              Try different Keywords or remove search filter
+            </NoVideoNote>
+            <RetryButton type="button" onClick={onClickRetry}>
+              Retry
+            </RetryButton>
+          </NoVideoView>
+        )
+      }}
+    </VideoAndThemeContext.Consumer>
   )
-
-  render() {
-    const {apiStatus} = this.state
-    switch (apiStatus) {
-      case apiStatusConstants.success:
-        return this.renderVideosList()
-      case apiStatusConstants.failure:
-        return this.renderFailureView()
-      case apiStatusConstants.inProgress:
-        return this.renderLoadingView()
-      default:
-        return null
-    }
-  }
 }
 export default HomeVideos
